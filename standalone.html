@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎮 亲戚大作战</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .header {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 24px; margin-bottom: 5px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    
+    .battle-area { padding: 20px; }
+    
+    .characters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .char-btn {
+      flex: 1; min-width: 80px; padding: 12px 8px;
+      border: 2px solid #eee; border-radius: 12px;
+      background: white; cursor: pointer; font-size: 13px;
+      transition: all 0.2s;
+    }
+    .char-btn:hover { border-color: #ff6b6b; }
+    .char-btn.active { border-color: #ff6b6b; background: #fff5f5; color: #ff6b6b; }
+    
+    .hp-section { margin-bottom: 20px; }
+    .hp-label { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .hp-bar {
+      height: 24px; background: #eee; border-radius: 12px;
+      overflow: hidden; position: relative;
+    }
+    .hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ff8787);
+      border-radius: 12px;
+      transition: width 0.5s ease;
+    }
+    .hp-text {
+      position: absolute; right: 10px; top: 50%;
+      transform: translateY(-50%); font-size: 12px; font-weight: bold; color: #666;
+    }
+    
+    .bubble {
+      background: #f5f5f5; padding: 16px 20px;
+      border-radius: 16px; margin-bottom: 15px;
+      position: relative; font-size: 16px; line-height: 1.5;
+    }
+    .bubble::before {
+      content: ''; position: absolute; top: -12px; left: 20px;
+      border: 12px solid transparent; border-bottom-color: #f5f5f5;
+    }
+    .bubble .who { font-size: 12px; color: #999; margin-bottom: 5px; }
+    
+    .input-section { margin-top: 20px; }
+    .input-row { display: flex; gap: 10px; }
+    input[type="text"] {
+      flex: 1; padding: 14px 16px;
+      border: 2px solid #eee; border-radius: 12px;
+      font-size: 16px; outline: none;
+    }
+    input[type="text"]:focus { border-color: #ff6b6b; }
+    .send-btn {
+      width: 50px; height: 50px;
+      border: none; border-radius: 12px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white; font-size: 20px; cursor: pointer;
+    }
+    
+    .quick-btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .quick-btn {
+      padding: 8px 14px; border: 1px solid #ddd;
+      border-radius: 20px; background: white;
+      font-size: 13px; cursor: pointer;
+    }
+    .quick-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+    
+    .stats { display: flex; justify-content: center; gap: 20px; padding: 15px; background: #f9f9f9; border-radius: 12px; margin-bottom: 15px; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 20px; font-weight: bold; color: #ff6b6b; }
+    .stat-label { font-size: 12px; color: #999; }
+    
+    .round-info { text-align: center; font-size: 12px; color: #999; margin-bottom: 10px; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 100; }
+    .modal.show { display: flex; }
+    .modal-content { background: white; padding: 30px; border-radius: 20px; max-width: 350px; width: 90%; text-align: center; }
+    .modal h2 { margin-bottom: 15px; }
+    .damage-show { font-size: 48px; font-weight: bold; color: #ff6b6b; margin: 15px 0; }
+    .comment { color: #666; margin-bottom: 20px; }
+    .modal-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎮 亲戚大作战</h1>
+      <p>优雅应对亲戚的灵魂拷问</p>
+    </div>
+    
+    <div class="battle-area">
+      <div class="characters">
+        <button class="char-btn active" onclick="selectChar('大姨')">👩 大姨</button>
+        <button class="char-btn" onclick="selectChar('叔叔')">👨 叔叔</button>
+        <button class="char-btn" onclick="selectChar('奶奶')">👵 奶奶</button>
+      </div>
+      
+      <div class="stats">
+        <div class="stat"><div class="stat-num" id="winCount">0</div><div class="stat-label">胜利</div></div>
+        <div class="stat"><div class="stat-num" id="totalDamage">0</div><div class="stat-label">总伤害</div></div>
+      </div>
+      
+      <div class="hp-section">
+        <div class="hp-label"><span id="charName">👩 大姨</span><span id="hpPercent">100%</span></div>
+        <div class="hp-bar"><div class="hp-fill" id="hpFill" style="width: 100%"></div><span class="hp-text" id="hpText">100/100</span></div>
+      </div>
+      
+      <div class="round-info" id="roundInfo">第 1 轮</div>
+      
+      <div class="bubble">
+        <div class="who" id="whoLabel">👩 大姨 说：</div>
+        <div id="questionText">找对象了吗？都28了，该急了！</div>
+      </div>
+      
+      <div class="input-section">
+        <div class="input-row">
+          <input type="text" id="answerInput" placeholder="输入你的回答..." onkeypress="if(event.key==='Enter')submitAnswer()">
+          <button class="send-btn" onclick="submitAnswer()">➤</button>
+        </div>
+        <div class="quick-btns">
+          <button class="quick-btn" onclick="useQuick('大姨，您吃菜吃菜')">吃菜吃菜</button>
+          <button class="quick-btn" onclick="useQuick('大姨，您家XX呢？')">反问回去</button>
+          <button class="quick-btn" onclick="useQuick('不急不急')">不急不急</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="resultModal">
+    <div class="modal-content">
+      <h2>💥 造成伤害</h2>
+      <div class="damage-show" id="damageShow">0</div>
+      <p class="comment" id="resultComment">大姨若有所思...</p>
+      <button class="modal-btn" onclick="closeModal()"><span id="continueText">继续战斗</span></button>
+    </div>
+  </div>
+
+  <script>
+    // 豆包API配置
+    const API_KEY = '7999abb8-d5ea-4312-b6d2-b46e5fb638a1';
+    const MODEL_ID = 'doubao-seed-1-6-251015';
+    
+    // 游戏状态
+    let game = { character: '大姨', hp: 100, maxHp: 100, round: 1, totalDamage: 0, winCount: 0 };
+    
+    // 角色配置
+    const chars = {
+      '大姨': { hp: 100, firstQ: '找对象了吗？都28了，该急了！' },
+      '叔叔': { hp: 100, firstQ: '现在工资多少？年终奖发了多少？' },
+      '奶奶': { hp: 150, firstQ: '什么时候生孩子？趁年轻赶紧生！' }
+    };
+    
+    // 直接调用豆包API
+    async function callDoubao(userAnswer, question, hp, round) {
+      const https = await import('https');
+      
+      return new Promise((resolve) => {
+        const data = JSON.stringify({
+          model: MODEL_ID,
+          messages: [
+            { role: 'system', content: '你是亲戚对战裁判。大姨100HP，输出JSON：{"damage":10-40,"comment":"评语","next":"追问","over":true/false}' },
+            { role: 'user', content: `Q:"${question}" A:"${userAnswer}" HP:${hp}/100 R:${round}` }
+          ],
+          temperature: 0.7, max_tokens: 100
+        });
+        
+        const req = https.default.request({
+          hostname: 'ark.cn-beijing.volces.com',
+          path: '/api/v3/chat/completions',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          timeout: 10000
+        }, (res) => {
+          let chunks = '';
+          res.on('data', chunk => chunks += chunk);
+          res.on('end', () => {
+            try {
+              const content = JSON.parse(chunks).choices[0].message.content;
+              const damage = parseInt(content.match(/damage["\s:]+(\d+)/)?.[1] || Math.floor(Math.random() * 20 + 15));
+              const over = content.includes('"over":true') || hp - damage <= 0;
+              const nextQ = content.match(/next["\s:]+["]([^"]+)["]/)?.[1] || '别扯别的，你就说到底怎么想的？';
+              
+              resolve({ damage, over, next: nextQ });
+            } catch (e) {
+              // 备用逻辑
+              const damage = Math.floor(Math.random() * 20 + 15);
+              resolve({ damage, over: hp - damage <= 0, next: '别扯别的，你就说到底怎么想的？' });
+            }
+          });
+        });
+        
+        req.on('error', () => {
+          const damage = Math.floor(Math.random() * 20 + 15);
+          resolve({ damage, over: hp - damage <= 0, next: '别扯别的，你就说到底怎么想的？' });
+        });
+        req.setTimeout(10000, () => { req.destroy(); resolve({ damage: 20, over: false, next: '...' }); });
+        req.write(data); req.end();
+      });
+    }
+    
+    function selectChar(char) {
+      document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      game.character = char;
+      game.hp = chars[char].hp;
+      game.maxHp = chars[char].hp;
+      game.round = 1;
+      updateUI();
+      document.getElementById('questionText').textContent = chars[char].firstQ;
+    }
+    
+    async function submitAnswer() {
+      const ans = document.getElementById('answerInput').value.trim();
+      if (!ans) return;
+      
+      const q = document.getElementById('questionText').textContent;
+      const result = await callDoubao(ans, q, game.hp, game.round);
+      
+      game.hp = Math.max(0, game.hp - result.damage);
+      game.totalDamage += result.damage;
+      
+      showResult(result.damage, result.over);
+      updateUI();
+      
+      if (result.over) {
+        game.winCount++;
+        setTimeout(() => { alert('🎉 战斗胜利！大姨悻悻地离开了！'); initGame(); }, 500);
+      } else {
+        game.round++;
+        document.getElementById('questionText').textContent = result.next;
+      }
+      
+      document.getElementById('answerInput').value = '';
+    }
+    
+    function useQuick(txt) { document.getElementById('answerInput').value = txt; }
+    function updateUI() {
+      const pct = (game.hp / game.maxHp) * 100;
+      document.getElementById('hpFill').style.width = pct + '%';
+      document.getElementById('hpText').textContent = `${game.hp}/${game.maxHp}`;
+      document.getElementById('hpPercent').textContent = Math.round(pct) + '%';
+      document.getElementById('charName').textContent = { '大姨': '👩 大姨', '叔叔': '👨 叔叔', '奶奶': '👵 奶奶' }[game.character];
+      document.getElementById('whoLabel').textContent = { '大姨': '👩 大姨', '叔叔': '👨 叔叔', '奶奶': '👵 奶奶' }[game.character] + ' 说：';
+      document.getElementById('roundInfo').textContent = `第 ${game.round} 轮`;
+      document.getElementById('winCount').textContent = game.winCount;
+      document.getElementById('totalDamage').textContent = game.totalDamage;
+    }
+    
+    function showResult(dmg, over) {
+      document.getElementById('damageShow').textContent = '-' + dmg;
+      document.getElementById('continueText').textContent = over ? '再来一局' : '继续战斗';
+      document.getElementById('resultModal').classList.add('show');
+    }
+    function closeModal() { document.getElementById('resultModal').classList.remove('show'); }
+    function initGame() { game.hp = chars[game.character].hp; game.round = 1; updateUI(); }
+    
+    initGame();
+  </script>
+</body>
+</html>
