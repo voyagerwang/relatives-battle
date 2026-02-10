@@ -1,0 +1,15 @@
+{
+  "name": "relatives-battle",
+  "version": "1.0.0",
+  "description": "亲戚大作战 - 过年亲戚问答battle游戏",
+  "main": "api/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "node --watch api/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}

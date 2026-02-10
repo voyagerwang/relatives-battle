@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎮 亲戚大作战</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .header {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 24px; margin-bottom: 5px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    
+    .battle-area {
+      padding: 20px;
+    }
+    
+    /* 角色展示 */
+    .characters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .char-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 8px;
+      border: 2px solid #eee;
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+    }
+    .char-btn:hover { border-color: #ff6b6b; }
+    .char-btn.active {
+      border-color: #ff6b6b;
+      background: #fff5f5;
+      color: #ff6b6b;
+    }
+    
+    /* 血条 */
+    .hp-section { margin-bottom: 20px; }
+    .hp-label { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .hp-bar {
+      height: 24px;
+      background: #eee;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ff8787);
+      border-radius: 12px;
+      transition: width 0.5s ease;
+    }
+    .hp-text {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      font-weight: bold;
+      color: #666;
+    }
+    
+    /* 对话气泡 */
+    .bubble {
+      background: #f5f5f5;
+      padding: 16px 20px;
+      border-radius: 16px;
+      margin-bottom: 15px;
+      position: relative;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .bubble::before {
+      content: '';
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      border: 12px solid transparent;
+      border-bottom-color: #f5f5f5;
+    }
+    .bubble .who { font-size: 12px; color: #999; margin-bottom: 5px; }
+    
+    /* 输入区域 */
+    .input-section { margin-top: 20px; }
+    .input-row { display: flex; gap: 10px; }
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 16px;
+      border: 2px solid #eee;
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: #ff6b6b; }
+    .send-btn {
+      width: 50px;
+      height: 50px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .send-btn:active { transform: scale(0.95); }
+    
+    /* 快捷按钮 */
+    .quick-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .quick-btn {
+      padding: 8px 14px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      background: white;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quick-btn:hover {
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+    }
+    
+    /* 结果弹窗 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 350px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .damage-show {
+      font-size: 48px;
+      font-weight: bold;
+      color: #ff6b6b;
+      margin: 15px 0;
+    }
+    .comment { color: #666; margin-bottom: 20px; }
+    .modal-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    /* 战斗统计 */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 20px; font-weight: bold; color: #ff6b6b; }
+    .stat-label { font-size: 12px; color: #999; }
+    
+    /* 回合指示 */
+    .round-info {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎮 亲戚大作战</h1>
+      <p>优雅应对亲戚的灵魂拷问</p>
+    </div>
+    
+    <div class="battle-area">
+      <!-- 角色选择 -->
+      <div class="characters">
+        <button class="char-btn active" onclick="selectChar('大姨')">👩 大姨</button>
+        <button class="char-btn" onclick="selectChar('叔叔')">👨 叔叔</button>
+        <button class="char-btn" onclick="selectChar('奶奶')">👵 奶奶</button>
+      </div>
+      
+      <!-- 战斗统计 -->
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num" id="winCount">0</div>
+          <div class="stat-label">胜利</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="totalDamage">0</div>
+          <div class="stat-label">总伤害</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="bestRound">0</div>
+          <div class="stat-label">最佳回合</div>
+        </div>
+      </div>
+      
+      <!-- 血条 -->
+      <div class="hp-section">
+        <div class="hp-label">
+          <span>👩 大姨</span>
+          <span id="hpPercent">100%</span>
+        </div>
+        <div class="hp-bar">
+          <div class="hp-fill" id="hpFill" style="width: 100%"></div>
+          <span class="hp-text" id="hpText">100/100</span>
+        </div>
+      </div>
+      
+      <!-- 回合 -->
+      <div class="round-info" id="roundInfo">第 1 轮</div>
+      
+      <!-- 对话气泡 -->
+      <div class="bubble">
+        <div class="who">👩 大姨 说：</div>
+        <div id="questionText">找对象了吗？都28了，该急了！</div>
+      </div>
+      
+      <!-- 输入区域 -->
+      <div class="input-section">
+        <div class="input-row">
+          <input type="text" id="answerInput" placeholder="输入你的回答..." onkeypress="handleKeyPress(event)">
+          <button class="send-btn" onclick="submitAnswer()">➤</button>
+        </div>
+        <div class="quick-btns">
+          <button class="quick-btn" onclick="useQuickAnswer('大姨，您吃菜吃菜')">吃菜吃菜</button>
+          <button class="quick-btn" onclick="useQuickAnswer('大姨，您家XX呢？')">反问回去</button>
+          <button class="quick-btn" onclick="useQuickAnswer('不急不急')">不急不急</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 结果弹窗 -->
+  <div class="modal" id="resultModal">
+    <div class="modal-content">
+      <h2 id="resultTitle">💥 造成伤害</h2>
+      <div class="damage-show" id="damageShow">0</div>
+      <p class="comment" id="resultComment">大姨若有所思...</p>
+      <button class="modal-btn" onclick="closeModal()">
+        <span id="continueText">继续战斗</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 游戏状态
+    let gameState = {
+      character: '大姨',
+      hp: 100,
+      maxHp: 100,
+      round: 1,
+      totalDamage: 0,
+      winCount: 0,
+      bestRound: 0
+    };
+
+    const API_URL = 'http://localhost:3000/api';
+
+    // 选择角色
+    function selectChar(char) {
+      document.querySelectorAll('.char-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      gameState.character = char;
+      gameState.hp = char === '奶奶' ? 150 : 100;
+      gameState.maxHp = gameState.hp;
+      gameState.round = 1;
+      updateUI();
+      initGame();
+    }
+
+    // 初始化游戏
+    async function initGame() {
+      try {
+        const res = await fetch(`${API_URL}/init`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ character: gameState.character })
+        });
+        const data = await res.json();
+        gameState.hp = data.hp;
+        gameState.maxHp = data.maxHp;
+        gameState.round = 1;
+        document.getElementById('questionText').textContent = data.firstQuestion;
+        updateUI();
+      } catch (e) {
+        console.error('初始化失败:', e);
+      }
+    }
+
+    // 提交回答
+    async function submitAnswer() {
+      const input = document.getElementById('answerInput');
+      const answer = input.value.trim();
+      if (!answer) return;
+
+      const question = document.getElementById('questionText').textContent;
+      
+      try {
+        const res = await fetch(`${API_URL}/evaluate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userAnswer: answer,
+            question: question,
+            currentHp: gameState.hp,
+            round: gameState.round
+          })
+        });
+
+        const result = await res.json();
+        
+        if (result.error) {
+          alert('评估失败: ' + result.error);
+          return;
+        }
+
+        // 更新状态
+        const damage = result.evaluation.damage;
+        gameState.hp = Math.max(0, gameState.hp - damage);
+        gameState.totalDamage += damage;
+        gameState.bestRound = Math.max(gameState.bestRound, gameState.round);
+        
+        // 显示结果
+        showResult(damage, result.evaluation.comment, result.game_over);
+        
+        // 更新UI
+        updateUI();
+        
+        // 游戏结束
+        if (result.game_over) {
+          gameState.winCount++;
+          gameState.round = 1;
+          setTimeout(() => {
+            alert('🎉 战斗胜利！大姨悻悻地离开了！');
+            initGame();
+          }, 500);
+        } else {
+          gameState.round++;
+          document.getElementById('questionText').textContent = result.next_question;
+        }
+        
+        input.value = '';
+      } catch (e) {
+        console.error('请求失败:', e);
+        alert('请求失败，请重试');
+      }
+    }
+
+    // 显示结果弹窗
+    function showResult(damage, comment, gameOver) {
+      document.getElementById('damageShow').textContent = '-' + damage;
+      document.getElementById('resultComment').textContent = comment;
+      document.getElementById('continueText').textContent = gameOver ? '再来一局' : '继续战斗';
+      document.getElementById('resultModal').classList.add('show');
+    }
+
+    // 关闭弹窗
+    function closeModal() {
+      document.getElementById('resultModal').classList.remove('show');
+    }
+
+    // 使用快捷回答
+    function useQuickAnswer(answer) {
+      document.getElementById('answerInput').value = answer;
+    }
+
+    // 键盘回车提交
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') submitAnswer();
+    }
+
+    // 更新UI
+    function updateUI() {
+      const hpPercent = (gameState.hp / gameState.maxHp) * 100;
+      document.getElementById('hpFill').style.width = hpPercent + '%';
+      document.getElementById('hpText').textContent = `${gameState.hp}/${gameState.maxHp}`;
+      document.getElementById('hpPercent').textContent = Math.round(hpPercent) + '%';
+      document.getElementById('roundInfo').textContent = `第 ${gameState.round} 轮`;
+      document.getElementById('winCount').textContent = gameState.winCount;
+      document.getElementById('totalDamage').textContent = gameState.totalDamage;
+      document.getElementById('bestRound').textContent = gameState.bestRound;
+    }
+
+    // 初始化
+    initGame();
+  </script>
+</body>
+</html>
