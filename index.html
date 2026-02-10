@@ -306,7 +306,15 @@
       bestRound: 0
     };
 
-    const API_URL = 'http://localhost:3000/api';
+    // 自动获取API地址（兼容本地和线上）
+    const getApiUrl = () => {
+      if (typeof window !== 'undefined') {
+        // 前端环境：使用当前域名+/api
+        return location.origin + '/api';
+      }
+      return 'http://localhost:3000/api';
+    };
+    const API_URL = getApiUrl();
 
     // 选择角色
     function selectChar(char) {
